@@ -1,0 +1,1 @@
+from gym_fightingice.envs.fightingice_env import FightingiceEnv

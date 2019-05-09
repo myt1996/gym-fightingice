@@ -1,0 +1,9 @@
+
+__pycache__
+.vscode
+data
+gym_fightingice.egg-info
+lib
+log
+test_floder
+FightingICE.jar
