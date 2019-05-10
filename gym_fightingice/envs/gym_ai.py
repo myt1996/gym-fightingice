@@ -47,21 +47,11 @@ class GymAI(object):
         self.screenData = sd
         
     def getInformation(self, frameData):
+        self.pre_framedata = frameData if self.pre_framedata is None else self.frameData
         self.frameData = frameData
         self.cc.setFrameData(self.frameData, self.player)
         if frameData.getEmptyFlag():
             return
-        if self.pre_framedata == None:
-            self.reward = 0
-        else:
-            p2_hp_pre = self.pre_framedata.getCharacter(False).getHp()
-            p1_hp_pre = self.pre_framedata.getCharacter(True).getHp()
-            p2_hp_now = self.frameData.getCharacter(False).getHp()
-            p1_hp_now = self.frameData.getCharacter(True).getHp()
-            if self.player:
-                self.reward = (p2_hp_pre-p2_hp_now) - (p1_hp_pre-p1_hp_now)
-            else:
-                self.reward = (p1_hp_pre-p1_hp_now) - (p2_hp_pre-p2_hp_now)
 
     def input(self):
         return self.inputKey
@@ -88,23 +78,25 @@ class GymAI(object):
         # self.obs = three_d
         # self.obs = cv2.resize(self.obs, (84,84))
         # self.obs = np.expand_dims(self.obs, 2)
-        self.obs = self.getObservation()
 
         # if just inited, should wait for first reset()
         if self.just_inited:
             request = self.pipe.recv()
             if request == "reset":
                 self.just_inited = False
+                self.obs = self.get_obs()
                 self.pipe.send(self.obs)
             else:
                 raise ValueError
         # if not just inited but self.obs is none, it means second/thrid round just started
         # should return only obs for reset()
         elif self.obs is None:
-            self.just_inited = False
+            self.obs = self.get_obs()
             self.pipe.send(self.obs)
         # if there is self.obs, do step() and return [obs, reward, done, info]
         else:
+            self.obs = self.get_obs()
+            self.reward = self.get_reward()
             self.pipe.send([self.obs, self.reward, False, None])
         
         request = self.pipe.recv()
@@ -112,7 +104,31 @@ class GymAI(object):
             action = request[1]
             self.cc.commandCall(self.action_strs[action])
 
-    def getObservation(self):
+    def get_reward(self):
+        try:
+            if self.pre_framedata.getEmptyFlag() or self.frameData.getEmptyFlag():
+                reward = 0
+            else:
+                p2_hp_pre = self.pre_framedata.getCharacter(False).getHp()
+                p1_hp_pre = self.pre_framedata.getCharacter(True).getHp()
+                p2_hp_now = self.frameData.getCharacter(False).getHp()
+                p1_hp_now = self.frameData.getCharacter(True).getHp()
+                if self.player:
+                    reward = (p2_hp_pre-p2_hp_now) - (p1_hp_pre-p1_hp_now)
+                else:
+                    reward = (p1_hp_pre-p1_hp_now) - (p2_hp_pre-p2_hp_now)
+        except:
+            reward = 0
+
+        if reward > 0:
+            reward = 1
+        elif reward < 0:
+            reward = -1
+        else:
+            reward = 0
+        return reward
+
+    def get_obs(self):
         my = self.frameData.getCharacter(self.player)
         opp = self.frameData.getCharacter(not self.player)
 
@@ -242,7 +258,9 @@ class GymAI(object):
             for t in range(6):
                 observation.append(0.0)
 
-        return np.array(observation, dtype=np.float32)
+        observation = np.array(observation, dtype=np.float32)
+        observation = np.clip(observation, 0, 1)
+        return observation
 
     # This part is mandatory
     class Java:

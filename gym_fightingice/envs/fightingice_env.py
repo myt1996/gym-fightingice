@@ -27,14 +27,17 @@ def start_up():
 
 class FightingiceEnv(gym.Env):
     metadata = {'render.modes': ['human']}
-    def __init__(self, java_env_path=None, p2=Machete, port=None, auto_start_up = False):
+    def __init__(self, env_config=None, java_env_path="/home/myt/gym-fightingice", p2=Machete, port=None, auto_start_up = False):
         # first check java can be run
         java_version = subprocess.check_output('java -version 2>&1 | awk -F[\\\"_] \'NR==1{print $2}\'', shell=True)
         if java_version == b"\n":
             raise ModuleNotFoundError("Java is not installed")
         
         # second check if FightingIce is installed correct
-        self.java_env_path = java_env_path or os.getcwd()
+        if java_env_path == None:
+            self.java_env_path = os.getcwd()
+        else:
+            self.java_env_path = java_env_path
         start_jar_path = os.path.join(self.java_env_path, "FightingICE.jar")
         start_data_path = os.path.join(self.java_env_path, "data")
         start_lib_path = os.path.join(self.java_env_path, "lib")
@@ -69,7 +72,7 @@ class FightingiceEnv(gym.Env):
             
         print("Start java env in {} and port {}".format(self.java_env_path, self.port))
         start_up_str = "{}:{}:{}:{}".format(start_jar_path, lwjgl_path, natives_path, lib_path)
-        self.java_env = subprocess.Popen(["java", "-cp", start_up_str, "Main", "--port", str(self.port), "--py4j","--fastmode", "--grey-bg", "--inverted-player", "1", "--mute", "--limithp", "500", "500"])
+        self.java_env = subprocess.Popen(["java", "-cp", start_up_str, "Main", "--port", str(self.port), "--py4j","--fastmode", "--grey-bg", "--inverted-player", "1", "--mute", "--limithp", "500", "500", "--disable-window"])
         #self.java_env = subprocess.Popen(["java", "-cp", "/home/myt/gym-fightingice/gym_fightingice/FightingICE.jar:/home/myt/gym-fightingice/gym_fightingice/lib/lwjgl/*:/home/myt/gym-fightingice/gym_fightingice/lib/natives/linux/*:/home/myt/gym-fightingice/gym_fightingice/lib/*", "Main", "--port", str(self.free_port), "--py4j", "--c1", "ZEN", "--c2", "ZEN","--fastmode", "--grey-bg", "--inverted-player", "1", "--mute"])
         time.sleep(3) # sleep 3s for java starting, if your machine is slow, make it longer
 
@@ -114,10 +117,12 @@ class FightingiceEnv(gym.Env):
 
 if __name__ == "__main__":
     env = FightingiceEnv()
-    obs = env.reset()
-    done = False
 
-    while not done:
-        new_obs, reward, done, _ = env.step(random.randint(0, 10))
+    while True:
+        obs = env.reset()
+        done = False
+
+        while not done:
+            new_obs, reward, done, _ = env.step(random.randint(0, 10))
     
     print("finish")
