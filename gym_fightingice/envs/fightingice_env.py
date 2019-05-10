@@ -69,7 +69,7 @@ class FightingiceEnv(gym.Env):
             
         print("Start java env in {} and port {}".format(self.java_env_path, self.port))
         start_up_str = "{}:{}:{}:{}".format(start_jar_path, lwjgl_path, natives_path, lib_path)
-        self.java_env = subprocess.Popen(["java", "-cp", start_up_str, "Main", "--port", str(self.port), "--py4j","--fastmode", "--grey-bg", "--inverted-player", "1", "--mute"])
+        self.java_env = subprocess.Popen(["java", "-cp", start_up_str, "Main", "--port", str(self.port), "--py4j","--fastmode", "--grey-bg", "--inverted-player", "1", "--mute", "--limithp", "500", "500"])
         #self.java_env = subprocess.Popen(["java", "-cp", "/home/myt/gym-fightingice/gym_fightingice/FightingICE.jar:/home/myt/gym-fightingice/gym_fightingice/lib/lwjgl/*:/home/myt/gym-fightingice/gym_fightingice/lib/natives/linux/*:/home/myt/gym-fightingice/gym_fightingice/lib/*", "Main", "--port", str(self.free_port), "--py4j", "--c1", "ZEN", "--c2", "ZEN","--fastmode", "--grey-bg", "--inverted-player", "1", "--mute"])
         time.sleep(3) # sleep 3s for java starting, if your machine is slow, make it longer
 
@@ -83,7 +83,7 @@ class FightingiceEnv(gym.Env):
         server, client = Pipe()
         self.pipe = server
         self.p1 = GymAI(self.gateway, client)
-        self.observation_space = spaces.Box(low=0, high=1, shape=(84,84, 1))
+        self.observation_space = spaces.Box(low=0, high=1, shape=(141,))
         self.action_space = spaces.Discrete(len(self.p1.action_strs))
         self.p2 = p2(self.gateway)
         self.manager.registerAI(self.p1.__class__.__name__, self.p1)
