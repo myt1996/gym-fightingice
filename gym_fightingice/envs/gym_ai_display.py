@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import PIL
 from py4j.java_gateway import get_field
 
 
@@ -9,9 +8,9 @@ class GymAIDisplay(object):
         self.gateway = gateway
         self.pipe = pipe
 
-        self.width = 96 # The width of the display to obtain
-        self.height = 64 # The height of the display to obtain
-        self.grayscale = True # The display's color to obtain true for grayscale, false for RGB
+        self.width = 96  # The width of the display to obtain
+        self.height = 64  # The height of the display to obtain
+        self.grayscale = True  # The display's color to obtain true for grayscale, false for RGB
 
         self.obs = None
         self.just_inited = True
@@ -22,7 +21,7 @@ class GymAIDisplay(object):
         self.pre_framedata = None
 
         self.frameskip = frameskip
-        
+
     def close(self):
         pass
 
@@ -30,12 +29,12 @@ class GymAIDisplay(object):
         self.inputKey = self.gateway.jvm.struct.Key()
         self.frameData = self.gateway.jvm.struct.FrameData()
         self.cc = self.gateway.jvm.aiinterface.CommandCenter()
-            
+
         self.player = player
         self.gameData = gameData
-       
+
         return 0
-        
+
     # please define this method when you use FightingICE version 3.20 or later
     def roundEnd(self, x, y, z):
         self.pipe.send([self.obs, 0, True, None])
@@ -43,11 +42,11 @@ class GymAIDisplay(object):
         if request == "close":
             return
         self.obs = None
-        
+
     # Please define this method when you use FightingICE version 4.00 or later
     def getScreenData(self, sd):
         self.screenData = sd
-        
+
     def getInformation(self, frameData):
         self.pre_framedata = frameData if self.pre_framedata is None else self.frameData
         self.frameData = frameData
@@ -57,16 +56,16 @@ class GymAIDisplay(object):
 
     def input(self):
         return self.inputKey
-    
+
     def gameEnd(self):
         pass
-        
+
     def processing(self):
         if self.frameData.getEmptyFlag() or self.frameData.getRemainingTime() <= 0:
             self.isGameJustStarted = True
             return
-                
-        if self.frameskip:        
+
+        if self.frameskip:
             if self.cc.getSkillFlag():
                 self.inputKey = self.cc.getSkillKey()
                 return
@@ -75,11 +74,12 @@ class GymAIDisplay(object):
             self.cc.skillCancel()
 
         # get display pixel data
-        displayBuffer = self.screenData.getDisplayByteBufferAsBytes(self.width, self.height, self.grayscale)
+        displayBuffer = self.screenData.getDisplayByteBufferAsBytes(
+            self.width, self.height, self.grayscale)
         one_d = np.frombuffer(displayBuffer, np.uint8)
         three_d = np.reshape(one_d, (self.width, self.height, 1))
         self.obs = three_d
-        self.obs = cv2.resize(self.obs, (96,64))
+        self.obs = cv2.resize(self.obs, (96, 64))
         self.obs = np.expand_dims(self.obs, 2)
 
         # if just inited, should wait for first reset()
@@ -101,7 +101,7 @@ class GymAIDisplay(object):
             self.obs = self.get_obs()
             self.reward = self.get_reward()
             self.pipe.send([self.obs, self.reward, False, None])
-        
+
         request = self.pipe.recv()
         if len(request) == 2 and request[0] == "step":
             action = request[1]
