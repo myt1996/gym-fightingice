@@ -5,7 +5,7 @@ from py4j.java_gateway import get_field
 
 
 class GymAI(object):
-    def __init__(self, gateway, pipe):
+    def __init__(self, gateway, pipe, frameskip=True):
         self.gateway = gateway
         self.pipe = pipe
 
@@ -20,9 +20,11 @@ class GymAI(object):
         self.action_strs = self._actions.split(" ")
 
         self.pre_framedata = None
+
+        self.frameskip = frameskip
         
     def close(self):
-        print("closed")
+        pass
 
     def initialize(self, gameData, player):
         self.inputKey = self.gateway.jvm.struct.Key()
@@ -47,74 +49,216 @@ class GymAI(object):
         self.screenData = sd
         
     def getInformation(self, frameData):
+        self.pre_framedata = frameData if self.pre_framedata is None else self.frameData
         self.frameData = frameData
         self.cc.setFrameData(self.frameData, self.player)
         if frameData.getEmptyFlag():
             return
-        if self.pre_framedata == None:
-            self.reward = 0
-        else:
-            p2_hp_pre = self.pre_framedata.getCharacter(False).getHp()
-            p1_hp_pre = self.pre_framedata.getCharacter(True).getHp()
-            p2_hp_now = self.frameData.getCharacter(False).getHp()
-            p1_hp_now = self.frameData.getCharacter(True).getHp()
-            self.reward = (p2_hp_pre-p2_hp_now) - (p1_hp_pre-p1_hp_now)
 
-        
     def input(self):
         return self.inputKey
     
     def gameEnd(self):
-        print("game ended")
+        pass
         
     def processing(self):
         if self.frameData.getEmptyFlag() or self.frameData.getRemainingTime() <= 0:
             self.isGameJustStarted = True
             return
                 
-        if self.cc.getSkillFlag():
-            self.inputKey = self.cc.getSkillKey()
-            return
+        if self.frameskip:        
+            if self.cc.getSkillFlag():
+                self.inputKey = self.cc.getSkillKey()
+                return
 
-        self.inputKey.empty()
-        self.cc.skillCancel()
+            self.inputKey.empty()
+            self.cc.skillCancel()
 
         # get display pixel data
-        displayBuffer = self.screenData.getDisplayByteBufferAsBytes(self.width, self.height, self.grayscale)
-        one_d = np.frombuffer(displayBuffer, np.uint8)
-        three_d = np.reshape(one_d, (self.width, self.height, 1))
+        # displayBuffer = self.screenData.getDisplayByteBufferAsBytes(self.width, self.height, self.grayscale)
+        # one_d = np.frombuffer(displayBuffer, np.uint8)
+        # three_d = np.reshape(one_d, (self.width, self.height, 1))
+        # self.obs = three_d
+        # self.obs = cv2.resize(self.obs, (84,84))
+        # self.obs = np.expand_dims(self.obs, 2)
 
         # if just inited, should wait for first reset()
         if self.just_inited:
             request = self.pipe.recv()
             if request == "reset":
                 self.just_inited = False
-                self.obs = three_d
-                self.obs = cv2.resize(self.obs, (84,84))
-                self.obs = np.expand_dims(self.obs, 2)
+                self.obs = self.get_obs()
                 self.pipe.send(self.obs)
             else:
                 raise ValueError
         # if not just inited but self.obs is none, it means second/thrid round just started
         # should return only obs for reset()
         elif self.obs is None:
-            self.just_inited = False
-            self.obs = three_d
-            self.obs = cv2.resize(self.obs, (84,84))
-            self.obs = np.expand_dims(self.obs, 2)
+            self.obs = self.get_obs()
             self.pipe.send(self.obs)
         # if there is self.obs, do step() and return [obs, reward, done, info]
         else:
-            self.obs = three_d
-            self.obs = cv2.resize(self.obs, (84,84))
-            self.obs = np.expand_dims(self.obs, 2)
+            self.obs = self.get_obs()
+            self.reward = self.get_reward()
             self.pipe.send([self.obs, self.reward, False, None])
         
         request = self.pipe.recv()
         if len(request) == 2 and request[0] == "step":
             action = request[1]
             self.cc.commandCall(self.action_strs[action])
+            if not self.frameskip:
+                self.inputKey = self.cc.getSkillKey()
 
+    def get_reward(self):
+        try:
+            if self.pre_framedata.getEmptyFlag() or self.frameData.getEmptyFlag():
+                reward = 0
+            else:
+                p2_hp_pre = self.pre_framedata.getCharacter(False).getHp()
+                p1_hp_pre = self.pre_framedata.getCharacter(True).getHp()
+                p2_hp_now = self.frameData.getCharacter(False).getHp()
+                p1_hp_now = self.frameData.getCharacter(True).getHp()
+                if self.player:
+                    reward = (p2_hp_pre-p2_hp_now) - (p1_hp_pre-p1_hp_now)
+                else:
+                    reward = (p1_hp_pre-p1_hp_now) - (p2_hp_pre-p2_hp_now)
+        except:
+            reward = 0
+        return reward
+
+    def get_obs(self):
+        my = self.frameData.getCharacter(self.player)
+        opp = self.frameData.getCharacter(not self.player)
+
+        myHp = abs(my.getHp() / 500)
+        myEnergy = my.getEnergy() / 300
+        myX = ((my.getLeft() + my.getRight()) / 2) / 960
+        myY = ((my.getBottom() + my.getTop()) / 2) / 640
+        mySpeedX = my.getSpeedX() / 15
+        mySpeedY = my.getSpeedY() / 28
+        myState = my.getAction().ordinal()
+
+        oppHp = abs(opp.getHp() / 500)
+        oppEnergy = opp.getEnergy() / 300
+        oppX = ((opp.getLeft() + opp.getRight()) / 2) / 960
+        oppY = ((opp.getBottom() + opp.getTop()) / 2) / 640
+        oppSpeedX = opp.getSpeedX() / 15
+        oppSpeedY = opp.getSpeedY() / 28
+        oppState = opp.getAction().ordinal()
+        oppRemainingFrame = opp.getRemainingFrame() / 70
+
+        observation = []
+        observation.append(myHp)
+        observation.append(myEnergy)
+        observation.append(myX)
+        observation.append(myY)
+        if mySpeedX < 0:
+            observation.append(0)
+        else:
+            observation.append(1)
+        observation.append(abs(mySpeedX))
+        if mySpeedY < 0:
+            observation.append(0)
+        else:
+            observation.append(1)
+        observation.append(abs(mySpeedY))
+        for i in range(56):
+            if i == myState:
+                observation.append(1)
+            else:
+                observation.append(0)
+
+        observation.append(oppHp)
+        observation.append(oppEnergy)
+        observation.append(oppX)
+        observation.append(oppY)
+        if oppSpeedX < 0:
+            observation.append(0)
+        else:
+            observation.append(1)
+        observation.append(abs(oppSpeedX))
+        if oppSpeedY < 0:
+            observation.append(0)
+        else:
+            observation.append(1)
+        observation.append(abs(oppSpeedY))
+        for i in range(56):
+            if i == oppState:
+                observation.append(1)
+            else:
+                observation.append(0)
+        observation.append(oppRemainingFrame)
+
+        myProjectiles = self.frameData.getProjectilesByP1()
+        oppProjectiles = self.frameData.getProjectilesByP2()
+
+        if len(myProjectiles) == 2:
+            myHitDamage = myProjectiles[0].getHitDamage() / 200.0
+            myHitAreaNowX = ((myProjectiles[0].getCurrentHitArea().getLeft() + myProjectiles[
+                0].getCurrentHitArea().getRight()) / 2) / 960.0
+            myHitAreaNowY = ((myProjectiles[0].getCurrentHitArea().getTop() + myProjectiles[
+                0].getCurrentHitArea().getBottom()) / 2) / 640.0
+            observation.append(myHitDamage)
+            observation.append(myHitAreaNowX)
+            observation.append(myHitAreaNowY)
+            myHitDamage = myProjectiles[1].getHitDamage() / 200.0
+            myHitAreaNowX = ((myProjectiles[1].getCurrentHitArea().getLeft() + myProjectiles[
+                1].getCurrentHitArea().getRight()) / 2) / 960.0
+            myHitAreaNowY = ((myProjectiles[1].getCurrentHitArea().getTop() + myProjectiles[
+                1].getCurrentHitArea().getBottom()) / 2) / 640.0
+            observation.append(myHitDamage)
+            observation.append(myHitAreaNowX)
+            observation.append(myHitAreaNowY)
+        elif len(myProjectiles) == 1:
+            myHitDamage = myProjectiles[0].getHitDamage() / 200.0
+            myHitAreaNowX = ((myProjectiles[0].getCurrentHitArea().getLeft() + myProjectiles[
+                0].getCurrentHitArea().getRight()) / 2) / 960.0
+            myHitAreaNowY = ((myProjectiles[0].getCurrentHitArea().getTop() + myProjectiles[
+                0].getCurrentHitArea().getBottom()) / 2) / 640.0
+            observation.append(myHitDamage)
+            observation.append(myHitAreaNowX)
+            observation.append(myHitAreaNowY)
+            for t in range(3):
+                observation.append(0.0)
+        else:
+            for t in range(6):
+                observation.append(0.0)
+
+        if len(oppProjectiles) == 2:
+            oppHitDamage = oppProjectiles[0].getHitDamage() / 200.0
+            oppHitAreaNowX = ((oppProjectiles[0].getCurrentHitArea().getLeft() + oppProjectiles[
+                0].getCurrentHitArea().getRight()) / 2) / 960.0
+            oppHitAreaNowY = ((oppProjectiles[0].getCurrentHitArea().getTop() + oppProjectiles[
+                0].getCurrentHitArea().getBottom()) / 2) / 640.0
+            observation.append(oppHitDamage)
+            observation.append(oppHitAreaNowX)
+            observation.append(oppHitAreaNowY)
+            oppHitDamage = oppProjectiles[1].getHitDamage() / 200.0
+            oppHitAreaNowX = ((oppProjectiles[1].getCurrentHitArea().getLeft() + oppProjectiles[
+                1].getCurrentHitArea().getRight()) / 2) / 960.0
+            oppHitAreaNowY = ((oppProjectiles[1].getCurrentHitArea().getTop() + oppProjectiles[
+                1].getCurrentHitArea().getBottom()) / 2) / 640.0
+            observation.append(oppHitDamage)
+            observation.append(oppHitAreaNowX)
+            observation.append(oppHitAreaNowY)
+        elif len(oppProjectiles) == 1:
+            oppHitDamage = oppProjectiles[0].getHitDamage() / 200.0
+            oppHitAreaNowX = ((oppProjectiles[0].getCurrentHitArea().getLeft() + oppProjectiles[
+                0].getCurrentHitArea().getRight()) / 2) / 960.0
+            oppHitAreaNowY = ((oppProjectiles[0].getCurrentHitArea().getTop() + oppProjectiles[
+                0].getCurrentHitArea().getBottom()) / 2) / 640.0
+            observation.append(oppHitDamage)
+            observation.append(oppHitAreaNowX)
+            observation.append(oppHitAreaNowY)
+            for t in range(3):
+                observation.append(0.0)
+        else:
+            for t in range(6):
+                observation.append(0.0)
+
+        observation = np.array(observation, dtype=np.float32)
+        observation = np.clip(observation, 0, 1)
+        return observation
 
     # This part is mandatory
     class Java:
