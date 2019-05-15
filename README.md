@@ -15,4 +15,14 @@ Data is for vector obs from game data but has 15 frames delay. <br />
 Display is for array obs and has no frame delay. It run slower than Data. <br />
 Frameskip let AI only get obs and take action when no skill is acting. <br />
 
-Run pip install -e . to start.
+# Requirement
+
+gym to make env.
+java and py4j to run FightingIce java version
+port_for to select port if need
+PIL and opencv to get display obs if need
+
+# Install
+```bash
+$ pip install -e .
+```
