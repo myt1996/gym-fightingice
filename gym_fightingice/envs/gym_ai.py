@@ -20,9 +20,11 @@ class GymAI(object):
         self.action_strs = self._actions.split(" ")
 
         self.pre_framedata = None
+
+        self.frameskip = False
         
     def close(self):
-        print("closed")
+        pass
 
     def initialize(self, gameData, player):
         self.inputKey = self.gateway.jvm.struct.Key()
@@ -57,19 +59,20 @@ class GymAI(object):
         return self.inputKey
     
     def gameEnd(self):
-        print("game ended")
+        pass
         
     def processing(self):
         if self.frameData.getEmptyFlag() or self.frameData.getRemainingTime() <= 0:
             self.isGameJustStarted = True
             return
                 
-        if self.cc.getSkillFlag():
-            self.inputKey = self.cc.getSkillKey()
-            return
+        if self.frameskip:        
+            if self.cc.getSkillFlag():
+                self.inputKey = self.cc.getSkillKey()
+                return
 
-        self.inputKey.empty()
-        self.cc.skillCancel()
+            self.inputKey.empty()
+            self.cc.skillCancel()
 
         # get display pixel data
         # displayBuffer = self.screenData.getDisplayByteBufferAsBytes(self.width, self.height, self.grayscale)
@@ -103,6 +106,8 @@ class GymAI(object):
         if len(request) == 2 and request[0] == "step":
             action = request[1]
             self.cc.commandCall(self.action_strs[action])
+            if not self.frameskip:
+                self.inputKey = self.cc.getSkillKey()
 
     def get_reward(self):
         try:
@@ -118,13 +123,6 @@ class GymAI(object):
                 else:
                     reward = (p1_hp_pre-p1_hp_now) - (p2_hp_pre-p2_hp_now)
         except:
-            reward = 0
-
-        if reward > 0:
-            reward = 1
-        elif reward < 0:
-            reward = -1
-        else:
             reward = 0
         return reward
 
