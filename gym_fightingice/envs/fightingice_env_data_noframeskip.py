@@ -33,7 +33,7 @@ def start_up():
 class FightingiceEnv_Data_NoFrameskip(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, freq_restart_java=3, env_config=None, java_env_path="/home/myt/gym-fightingice", port=None, auto_start_up=False):
+    def __init__(self, freq_restart_java=3, env_config=None, java_env_path=None, port=None, auto_start_up=False):
         _actions = "AIR AIR_A AIR_B AIR_D_DB_BA AIR_D_DB_BB AIR_D_DF_FA AIR_D_DF_FB AIR_DA AIR_DB AIR_F_D_DFA AIR_F_D_DFB AIR_FA AIR_FB AIR_GUARD AIR_GUARD_RECOV AIR_RECOV AIR_UA AIR_UB BACK_JUMP BACK_STEP CHANGE_DOWN CROUCH CROUCH_A CROUCH_B CROUCH_FA CROUCH_FB CROUCH_GUARD CROUCH_GUARD_RECOV CROUCH_RECOV DASH DOWN FOR_JUMP FORWARD_WALK JUMP LANDING NEUTRAL RISE STAND STAND_A STAND_B STAND_D_DB_BA STAND_D_DB_BB STAND_D_DF_FA STAND_D_DF_FB STAND_D_DF_FC STAND_F_D_DFA STAND_F_D_DFB STAND_FA STAND_FB STAND_GUARD STAND_GUARD_RECOV STAND_RECOV THROW_A THROW_B THROW_HIT THROW_SUFFER"
         action_strs = _actions.split(" ")
 
