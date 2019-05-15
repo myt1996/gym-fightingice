@@ -5,7 +5,7 @@ from py4j.java_gateway import get_field
 
 
 class GymAI(object):
-    def __init__(self, gateway, pipe):
+    def __init__(self, gateway, pipe, frameskip=True):
         self.gateway = gateway
         self.pipe = pipe
 
@@ -21,7 +21,7 @@ class GymAI(object):
 
         self.pre_framedata = None
 
-        self.frameskip = False
+        self.frameskip = frameskip
         
     def close(self):
         pass

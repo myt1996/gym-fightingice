@@ -14,9 +14,7 @@ from py4j.java_gateway import (CallbackServerParameters, GatewayParameters,
                                JavaGateway, get_field)
 
 import gym_fightingice
-from gym_fightingice.envs.DisplayInfo import DisplayInfo
-from gym_fightingice.envs.gym_ai import GymAI
-from gym_fightingice.envs.KickAI import KickAI
+from gym_fightingice.envs.gym_ai_display import GymAIDisplay
 from gym_fightingice.envs.Machete import Machete
 
 
@@ -33,14 +31,14 @@ def start_up():
     raise NotImplementedError("Come soon later")
 
 
-class FightingiceEnv(gym.Env):
+class FightingiceEnv_Display_NoFrameskip(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self, freq_restart_java=3, env_config=None, java_env_path="/home/myt/gym-fightingice", port=None, auto_start_up=False):
         _actions = "AIR AIR_A AIR_B AIR_D_DB_BA AIR_D_DB_BB AIR_D_DF_FA AIR_D_DF_FB AIR_DA AIR_DB AIR_F_D_DFA AIR_F_D_DFB AIR_FA AIR_FB AIR_GUARD AIR_GUARD_RECOV AIR_RECOV AIR_UA AIR_UB BACK_JUMP BACK_STEP CHANGE_DOWN CROUCH CROUCH_A CROUCH_B CROUCH_FA CROUCH_FB CROUCH_GUARD CROUCH_GUARD_RECOV CROUCH_RECOV DASH DOWN FOR_JUMP FORWARD_WALK JUMP LANDING NEUTRAL RISE STAND STAND_A STAND_B STAND_D_DB_BA STAND_D_DB_BB STAND_D_DF_FA STAND_D_DF_FB STAND_D_DF_FC STAND_F_D_DFA STAND_F_D_DFB STAND_FA STAND_FB STAND_GUARD STAND_GUARD_RECOV STAND_RECOV THROW_A THROW_B THROW_HIT THROW_SUFFER"
         action_strs = _actions.split(" ")
 
-        self.observation_space = spaces.Box(low=0, high=1, shape=(141,))
+        self.observation_space = spaces.Box(low=0, high=1, shape=(96,64,1))
         self.action_space = spaces.Discrete(len(action_strs))
 
         # first check java can be run
@@ -114,7 +112,7 @@ class FightingiceEnv(gym.Env):
         # create pipe between gym_env_api and python_ai for java env
         server, client = Pipe()
         self.pipe = server
-        self.p1 = GymAI(self.gateway, client)
+        self.p1 = GymAIDisplay(self.gateway, client, False)
         self.p2 = p2(self.gateway)
         self.manager.registerAI(self.p1.__class__.__name__, self.p1)
         self.manager.registerAI(self.p2.__class__.__name__, self.p2)
@@ -185,7 +183,7 @@ class FightingiceEnv(gym.Env):
             self._close_java_game()
 
 if __name__ == "__main__":
-    env = FightingiceEnv()
+    env = FightingiceEnv_Display_NoFrameskip()
 
     while True:
         obs = env.reset()
