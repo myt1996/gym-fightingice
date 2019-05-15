@@ -23,6 +23,10 @@ port_for to select port if need
 PIL and opencv to get display obs if need
 
 # Install
+First, run
 ```bash
 $ pip install -e .
 ```
+Then, <br />
+Download FightingIce from http://www.ice.ci.ritsumei.ac.jp/~ftgaic/index-2.html and extract to one folder. <br />
+Set java_env_path when make env or start your script in the installed path or just change it in the source code.
