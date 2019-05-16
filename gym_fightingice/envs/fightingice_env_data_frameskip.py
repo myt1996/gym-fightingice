@@ -85,8 +85,10 @@ class FightingiceEnv_Data_Frameskip(gym.Env):
                 raise ImportError(
                     "Pass port=[your_port] when make env, or install port_for to set startup port automatically, maybe pip install port_for can help")
 
-        self.start_up_str = "{}:{}:{}:{}".format(
-            start_jar_path, lwjgl_path, natives_path, lib_path)
+        self.java_ai_path = os.path.join(self.java_env_path, "data", "ai")
+        ai_path = os.path.join(self.java_ai_path, "*")
+        self.start_up_str = "{}:{}:{}:{}:{}".format(
+            start_jar_path, lwjgl_path, natives_path, lib_path, ai_path)
 
         self.game_started = False
         self.round_num = 0
@@ -117,11 +119,19 @@ class FightingiceEnv_Data_Frameskip(gym.Env):
         server, client = Pipe()
         self.pipe = server
         self.p1 = GymAI(self.gateway, client, True)
-        self.p2 = p2(self.gateway)
         self.manager.registerAI(self.p1.__class__.__name__, self.p1)
-        self.manager.registerAI(self.p2.__class__.__name__, self.p2)
-        self.game_to_start = self.manager.createGame(
-            "ZEN", "ZEN", self.p1.__class__.__name__, self.p2.__class__.__name__, self.freq_restart_java)
+
+        if isinstance(p2, str):
+            # p2 is a java class name
+            self.p2 = p2
+            self.game_to_start = self.manager.createGame(
+                "ZEN", "ZEN", self.p1.__class__.__name__, self.p2, self.freq_restart_java)
+        else:
+            # p2 is a python class
+            self.p2 = p2(self.gateway)
+            self.manager.registerAI(self.p2.__class__.__name__, self.p2)
+            self.game_to_start = self.manager.createGame(
+                "ZEN", "ZEN", self.p1.__class__.__name__, self.p2.__class__.__name__, self.freq_restart_java)
         self.game = Thread(target=game_thread,
                            name="game_thread", args=(self, ))
         self.game.start()
@@ -193,7 +203,7 @@ if __name__ == "__main__":
     env = FightingiceEnv_Data_Frameskip()
 
     while True:
-        obs = env.reset()
+        obs = env.reset("MctsAi")
         done = False
 
         while not done:
