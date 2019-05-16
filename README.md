@@ -29,13 +29,13 @@ Java and py4j to run FightingICE java version. Please install java by yourself a
 ```bash
 $ pip install py4j
 ``` 
-<br /><br />
+<br />
 
 port_for to select port if need, run
 ```bash
 $ pip install port_for
 ``` 
-<br /><br />
+<br />
 
 opencv to get display obs if need
 <br /><br />
