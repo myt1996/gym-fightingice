@@ -36,10 +36,12 @@ class GymAI(object):
 
     # please define this method when you use FightingICE version 3.20 or later
     def roundEnd(self, x, y, z):
+        print("send round end to {}".format(self.pipe))
         self.pipe.send([self.obs, 0, True, None])
-        request = self.pipe.recv()
-        if request == "close":
-            return
+        self.just_inited = True
+        # request = self.pipe.recv()
+        # if request == "close":
+        #     return
         self.obs = None
 
     # Please define this method when you use FightingICE version 4.00 or later
@@ -92,7 +94,9 @@ class GymAI(object):
             self.reward = self.get_reward()
             self.pipe.send([self.obs, self.reward, False, None])
 
+        #print("waitting for step in {}".format(self.pipe))
         request = self.pipe.recv()
+        #print("get step in {}".format(self.pipe))
         if len(request) == 2 and request[0] == "step":
             action = request[1]
             self.cc.commandCall(self.action_strs[action])
