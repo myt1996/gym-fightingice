@@ -24,7 +24,7 @@ gym to make env. Simplely run
 ```bash
 $ pip install gym
 ```
-Or see gym office site https://gym.openai.com/ and github https://github.com/openai/gym for more information.
+Or see gym official https://gym.openai.com/ and github https://github.com/openai/gym for more information.
 <br /><br />
 
 Java and py4j to run FightingICE java version. Please install java by yourself, for py4j, run
