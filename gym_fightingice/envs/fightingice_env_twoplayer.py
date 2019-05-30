@@ -41,11 +41,22 @@ class FightingiceEnv_TwoPlayer(gym.Env):
         self.observation_space = spaces.Box(low=0, high=1, shape=(141,))
         self.action_space = spaces.Discrete(len(action_strs))
 
-        # first check java can be run
-        java_version = subprocess.check_output(
-            'java -version 2>&1 | awk -F[\\\"_] \'NR==1{print $2}\'', shell=True)
-        if java_version == b"\n":
-            raise ModuleNotFoundError("Java is not installed")
+        os_name = platform.system()
+        if os_name.startswith("Linux"):
+            system_name = "linux"
+        elif os_name.startswith("Darwin"):
+            system_name = "macos"
+        else:
+            system_name = "windows"
+
+        if system_name == "linux":
+            # first check java can be run, can only be used on Linux
+            java_version = subprocess.check_output(
+                'java -version 2>&1 | awk -F[\\\"_] \'NR==1{print $2}\'', shell=True)
+            if java_version == b"\n":
+                raise ModuleNotFoundError("Java is not installed")
+        else:
+            print("Please make sure you can run java if you see some error")
 
         # second check if FightingIce is installed correct
         if java_env_path == None:
@@ -57,13 +68,6 @@ class FightingiceEnv_TwoPlayer(gym.Env):
         start_lib_path = os.path.join(self.java_env_path, "lib")
         lwjgl_path = os.path.join(start_lib_path, "lwjgl", "*")
         lib_path = os.path.join(start_lib_path, "*")
-        os_name = platform.system()
-        if os_name.startswith("Linux"):
-            system_name = "linux"
-        elif os_name.startswith("Darwin"):
-            system_name = "macos"
-        else:
-            system_name = "windows"
         start_system_lib_path = os.path.join(
             self.java_env_path, "lib", "natives", system_name)
         natives_path = os.path.join(start_system_lib_path, "*")
@@ -88,8 +92,14 @@ class FightingiceEnv_TwoPlayer(gym.Env):
 
         self.java_ai_path = os.path.join(self.java_env_path, "data", "ai")
         ai_path = os.path.join(self.java_ai_path, "*")
-        self.start_up_str = "{}:{}:{}:{}:{}".format(
-            start_jar_path, lwjgl_path, natives_path, lib_path, ai_path)
+        if system_name == "windows":
+            self.start_up_str = "{};{};{};{};{}".format(
+                start_jar_path, lwjgl_path, natives_path, lib_path, ai_path)
+            self.need_set_memory_when_start = True
+        else:
+            self.start_up_str = "{}:{}:{}:{}:{}".format(
+                start_jar_path, lwjgl_path, natives_path, lib_path, ai_path)  
+            self.need_set_memory_when_start = False    
 
         self.game_started = False
         self.round_num = 0
@@ -105,9 +115,14 @@ class FightingiceEnv_TwoPlayer(gym.Env):
         print("Start java env in {} and port {}".format(
             self.java_env_path, self.port))
         devnull = open(os.devnull, 'w')
-        self.java_env = subprocess.Popen(["java", "-cp", self.start_up_str, "Main", "--port", str(self.port), "--py4j", "--fastmode",
-                                          "--grey-bg", "--inverted-player", "1", "--mute", "--limithp", "20", "20"])#, stdout=devnull, stderr=devnull)
-        # self.java_env = subprocess.Popen(["java", "-cp", "/home/myt/gym-fightingice/gym_fightingice/FightingICE.jar:/home/myt/gym-fightingice/gym_fightingice/lib/lwjgl/*:/home/myt/gym-fightingice/gym_fightingice/lib/natives/linux/*:/home/myt/gym-fightingice/gym_fightingice/lib/*", "Main", "--port", str(self.free_port), "--py4j", "--c1", "ZEN", "--c2", "ZEN","--fastmode", "--grey-bg", "--inverted-player", "1", "--mute"])
+        if self.need_set_memory_when_start:
+            # -Xms1024m -Xmx1024m
+            # we need set this in windows
+            self.java_env = subprocess.Popen(["java", "-Xms1024m", "-Xmx1024m", "-cp", self.start_up_str, "Main", "--port", str(self.port), "--py4j", "--fastmode",
+                                          "--grey-bg", "--inverted-player", "1", "--mute", "--limithp", "400", "400"], stdout=devnull, stderr=devnull)
+        else:
+            self.java_env = subprocess.Popen(["java", "-cp", self.start_up_str, "Main", "--port", str(self.port), "--py4j", "--fastmode",
+                                            "--grey-bg", "--inverted-player", "1", "--mute", "--limithp", "400", "400"], stdout=devnull, stderr=devnull)        # self.java_env = subprocess.Popen(["java", "-cp", "/home/myt/gym-fightingice/gym_fightingice/FightingICE.jar:/home/myt/gym-fightingice/gym_fightingice/lib/lwjgl/*:/home/myt/gym-fightingice/gym_fightingice/lib/natives/linux/*:/home/myt/gym-fightingice/gym_fightingice/lib/*", "Main", "--port", str(self.free_port), "--py4j", "--c1", "ZEN", "--c2", "ZEN","--fastmode", "--grey-bg", "--inverted-player", "1", "--mute"])
         # sleep 3s for java starting, if your machine is slow, make it longer
         time.sleep(3)
 
