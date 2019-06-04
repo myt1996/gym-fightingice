@@ -40,6 +40,9 @@ $ pip install port_for
 <br />
 
 opencv for python to get display obs if need
+```bash
+$ pip install opencv-python
+``` 
 <br /><br />
 
 # Install
