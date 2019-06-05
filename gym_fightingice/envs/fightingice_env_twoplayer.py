@@ -30,7 +30,7 @@ def game_thread(env):
 def start_up():
     raise NotImplementedError("Come soon later")
 
-
+# only used for development, so gym.make cannot make this
 class FightingiceEnv_TwoPlayer(gym.Env):
     metadata = {'render.modes': ['human']}
 
