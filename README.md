@@ -46,10 +46,14 @@ $ pip install opencv-python
 <br /><br />
 
 # Install
-First, run
+First, clone this repo and run at the same path where "setup.py" is
 ```bash
 $ pip install -e .
 ```
 Then, <br />
-Download FightingICE from http://www.ice.ci.ritsumei.ac.jp/~ftgaic/index-2.html and extract to one folder. <br />
-Set java_env_path when call gym.make() or start your script in the FightingICE installed path or just change the defualt value in the source code.
+Download FightingICE from http://www.ice.ci.ritsumei.ac.jp/~ftgaic/index-2.html and extract, the "FTGx.xx" folder is used as java_env_path below. <br />
+Set java_env_path when call gym.make(), for example:
+```python
+env = gym.make("FightingiceDataNoFrameskip-v0", java_env_path="/home/your_user_name/FTG4.30")
+``` 
+or start your script in the FightingICE installed path or just change the defualt value in the source code.
