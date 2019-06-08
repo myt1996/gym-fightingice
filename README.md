@@ -13,10 +13,10 @@ FightingiceDisplayNoFrameskip-v0 <br />
 FightingiceDisplayFrameskip-v0
 
 In the above first two envs whose names contain "Data", a vector of game data with a delay of 15 frames is returned for obs (the state variables). <br />
-In the above last two envs whose names contain "Display", an ndarray with no frame delay is returned for obs, but FightingICE will runs slower in this mode. <br />
-In the above second and fourth envs whose names contain "Frameskip", after an env.step(action) called, obs at the timing right after the action completes will be returned while all the frames before the AI becomes controllable (the action completes) will be skipped. <br />
+In the above last two envs whose names contain "Display", an ndarray with no frame delay is returned for obs, but FightingICE will run slower in this mode. <br />
+In the above second and fourth envs whose names contain "Frameskip", after an env.step(action) is called, obs at the timing right after the action completes will be returned while all the frames before the AI becomes controllable (the action completes) will be skipped. <br />
 
-In addition, env FightingiceEnv_TwoPlayer is used to play games between two gym-fingtingice AI, for example, you can use it to test the performance when you have two AI developed in gym API.
+In addition to the above four envs, another env called FightingiceEnv_TwoPlayer is available that can be used to play a game between two gym-fightingice AIs. You can use this env to test the performance when you have two AIs developed in gym API.
 
 # Requirement
 
@@ -33,20 +33,20 @@ $ pip install py4j
 ``` 
 <br />
 
-port_for: to select port if needed, run
+port_for: to select port automatically if needed, run
 ```bash
 $ pip install port_for
 ``` 
 <br />
 
-opencv for python: to get display obs if needed, run
+opencv for python: to get obs if "Display" mode is needed, run
 ```bash
 $ pip install opencv-python
 ``` 
 <br /><br />
 
 # Install
-First, clone this repo and run this command in the same path where "setup.py" is
+First, clone this repo and run the following command in the same path where "setup.py" is
 ```bash
 $ pip install -e .
 ```
