@@ -39,14 +39,14 @@ $ pip install port_for
 ``` 
 <br />
 
-opencv for python: to get obs if "Display" mode is needed, run
+opencv for python: to get obs if the "Display" mode is needed, run
 ```bash
 $ pip install opencv-python
 ``` 
 <br /><br />
 
 # Install
-First, clone this repo and run the following command in the same path where "setup.py" is
+First, clone this repo and run the following command in the same path where "setup.py" is.
 ```bash
 $ pip install -e .
 ```
