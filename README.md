@@ -50,7 +50,7 @@ First, clone this repo and run this command in the same path where "setup.py" is
 ```bash
 $ pip install -e .
 ```
-Then, <br />
+<br />
 Then, download FightingICE from http://www.ice.ci.ritsumei.ac.jp/~ftgaic/index-2.html and extract it. The "FTGx.xx" folder should be specified in java_env_path below. <br />
 
 # Usage
