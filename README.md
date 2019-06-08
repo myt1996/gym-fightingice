@@ -14,7 +14,7 @@ FightingiceDisplayFrameskip-v0
 
 In the above first two envs whose names contain "Data", a vector of game data with a delay of 15 frames is returned for obs (the state variables). <br />
 In the above last two envs whose names contain "Display", an ndarray with no frame delay is returned for obs, but FightingICE will runs slower in this mode. <br />
-In the above second and fourth envs whose names contain "Frameskip", after a env.step(action) called, obs at the timing right after the action completes will be returned while all the frames before the AI becomes controllable (the action completes) will be skipped. <br />
+In the above second and fourth envs whose names contain "Frameskip", after an env.step(action) called, obs at the timing right after the action completes will be returned while all the frames before the AI becomes controllable (the action completes) will be skipped. <br />
 
 In addition, env FightingiceEnv_TwoPlayer is used to play games between two gym-fingtingice AI, for example, you can use it to test the performance when you have two AI developed in gym API.
 
