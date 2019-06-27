@@ -1,6 +1,7 @@
 # gym-fightingice
 
-Official gym API for game FightingICE.
+Official gym API for game FightingICE for FightingICE 4.30.
+See https://github.com/TeamFightingICE/Gym-FightingICE for FightingICE 4.40+.
 
 
 See http://www.ice.ci.ritsumei.ac.jp/~ftgaic/ for more information about FightingICE and the AI Competition.
